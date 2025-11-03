@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>S3 ACL Action Console</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Share+Tech+Mono&display=swap');
+
+        :root {
+            --bg-color: #1a1a1a;
+            --text-color: #e0e0e0;
+            --heading-color: #0ff; /* Cyan for heading */
+            --input-bg: #2b2b2b;
+            --primary-bg: #007bff; /* Blue */
+            --primary-hover-bg: #0056b3;
+            --accent-color: #8a2be2; /* Blue-Violet */
+            --neon-shadow-color: #0ff; /* Cyan neon glow */
+            --success-bg: #32a852;
+            --success-border: #2e8b46;
+            --error-bg: #a83232;
+            --error-border: #8b2e2e;
+        }
+
+        body {
+            font-family: 'Share Tech Mono', monospace; 
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-image: radial-gradient(circle at center, rgba(0,255,255,0.05) 0%, transparent 70%);
+        }
+
+        .container {
+            background-color: #222; 
+            border: 1px solid var(--accent-color);
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 0 15px rgba(138, 43, 226, 0.4); 
+            max-width: 500px;
+            width: 90%;
+            animation: fadeIn 1s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        h2 {
+            font-family: 'Orbitron', sans-serif; 
+            color: var(--heading-color);
+            text-align: center;
+            margin-bottom: 25px;
+            text-shadow: 0 0 10px var(--heading-color), 0 0 20px var(--heading-color);
+            animation: pulsateColor 5s infinite alternate; 
+        }
+
+        @keyframes pulsateColor {
+            0% { text-shadow: 0 0 10px var(--heading-color), 0 0 20px var(--heading-color); }
+            50% { text-shadow: 0 0 15px var(--heading-color), 0 0 25px var(--heading-color), 0 0 30px rgba(0, 255, 255, 0.5); }
+            100% { text-shadow: 0 0 10px var(--heading-color), 0 0 20px var(--heading-color); }
+        }
+
+        label {
+            display: block;
+            margin-top: 15px;
+            margin-bottom: 8px;
+            color: var(--text-color);
+            font-size: 1em;
+            font-weight: bold;
+        }
+
+        input[type="text"], select { 
+            width: 100%;
+            padding: 12px;
+            background-color: var(--input-bg);
+            border: 1px solid #555;
+            border-radius: 6px;
+            color: var(--text-color);
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 1em;
+            box-shadow: 0 0 0px var(--neon-shadow-color);
+            transition: box-shadow 0.3s ease-in-out;
+            -webkit-appearance: none; 
+            appearance: none;
+            box-sizing: border-box;
+        }
+
+        input[type="text"]:focus, select:focus {
+            outline: none;
+            border-color: var(--neon-shadow-color);
+            box-shadow: 0 0 8px var(--neon-shadow-color), 0 0 15px rgba(0, 255, 255, 0.4); 
+        }
+
+        .note {
+            font-size: 0.8em;
+            color: #aaa;
+            margin-top: 5px;
+            margin-bottom: 15px;
+            font-style: italic;
+        }
+        
+        button {
+            width: 100%;
+            padding: 14px;
+            margin-top: 25px;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1.1em;
+            font-family: 'Orbitron', sans-serif;
+            letter-spacing: 1px;
+            background-color: var(--primary-bg);
+            box-shadow: 0 4px 15px rgba(0, 123, 255, 0.4);
+            transition: background-color 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        button:hover {
+            background-color: var(--primary-hover-bg);
+            box-shadow: 0 6px 20px rgba(0, 123, 255, 0.6);
+        }
+
+        /* Message Box */
+        .message-box {
+            margin-top: 25px;
+            padding: 15px;
+            border-radius: 6px;
+            display: none;
+            font-weight: bold;
+            text-align: center;
+            font-size: 1em;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
+        }
+
+        .success {
+            background-color: var(--success-bg);
+            color: white;
+            border: 1px solid var(--success-border);
+            text-shadow: 0 0 5px rgba(255,255,255,0.5);
+        }
+        .error {
+            background-color: var(--error-bg);
+            color: white;
+            border: 1px solid var(--error-border);
+            text-shadow: 0 0 5px rgba(255,255,255,0.5);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>S3 ACL Action Console</h2>
+        <p class="note">Manage access permissions for registered users.</p>
+
+        <!-- 1. Object Key -->
+        <label for="objectKey">Object Key (Path to the file):</label>
+        <input type="text" id="objectKey" value="ccdmpstuff.txt" placeholder="e.g., ccdmpstuff.txt" required>
+        <p class="note">The object must exist in the bucket 'mpversion'.</p>
+
+        <!-- 2. Bucket Owner ID -->
+        <label for="ownerId">Your Account's Canonical User ID (Bucket Owner ID):</label>
+        <input type="text" id="ownerId" value="e74580749cbbfda33c54ecf27cb5674bbaece2d7860dcf83636a5a2da3636b66" required>
+        <p class="note">Required to ensure you retain Full Control.</p>
+
+        <!-- 3. Recipient Selection (Populated from DB) -->
+        <label for="recipientUsername">Select Recipient User:</label>
+        <select id="recipientUsername" required>
+            <option value="" disabled selected>-- Loading Registered Users... --</option>
+        </select>
+        <p class="note">Users are fetched directly from your database.</p>
+        
+        <!-- 4. Operation Selection -->
+        <label for="operation">Select ACL Operation:</label>
+        <select id="operation" required>
+            <option value="" disabled selected>-- Choose Access Operation --</option>
+            
+            <optgroup label="✨ GRANT ACCESS">
+                <option value="GRANT_READ">READ Access (Download/View)</option>
+                <option value="GRANT_WRITE">WRITE Access (Upload/Overwrite)</option>
+                <option value="GRANT_BOTH">BOTH (READ and WRITE Access)</option>
+            </optgroup>
+            
+            <optgroup label="🗑️ REVOKE ACCESS">
+                <option value="REVOKE_READ">REVOKE READ Access</option>
+                <option value="REVOKE_WRITE">REVOKE WRITE Access</option>
+                <option value="REVOKE_BOTH">REVOKE BOTH (READ and WRITE)</option>
+            </optgroup>
+        </select>
+        
+        <button id="aclActionButton" onclick="handleAclAction()">Execute ACL Action</button>
+        <div id="aclMessage" class="message-box"></div>
+    </div>
+
+    <script>
+        const backendBaseUrl = 'http://127.0.0.1:5000';
+        const aclMessageDiv = document.getElementById('aclMessage');
+        const recipientSelect = document.getElementById('recipientUsername');
+
+        function showMessage(div, text, type) {
+            div.innerHTML = text;
+            div.className = `message-box ${type}`;
+            div.style.display = 'block';
+            // Auto-hide after 8 seconds
+            setTimeout(() => {
+                 div.style.display = 'none';
+            }, 8000);
+        }
+
+        // Function to fetch registered users from the backend
+        async function fetchUsers() {
+            recipientSelect.innerHTML = '<option value="" disabled selected>-- Loading Users... --</option>';
+
+            try {
+                const response = await fetch(`${backendBaseUrl}/view-users`);
+                const result = await response.json();
+
+                if (response.ok && result.success) {
+                    recipientSelect.innerHTML = '<option value="" disabled selected>-- Select a Registered User --</option>';
+
+                    if (result.users && result.users.length > 0) {
+                        result.users.forEach(user => {
+                            const option = document.createElement('option');
+                            option.value = user.username;
+                            option.textContent = user.username;
+                            recipientSelect.appendChild(option);
+                        });
+                    } else {
+                        recipientSelect.innerHTML = '<option value="" disabled selected>-- No Users Registered --</option>';
+                        showMessage(aclMessageDiv, "No users found in the database. Please register some users via the `/add-user` endpoint first.", 'error');
+                    }
+                } else {
+                    showMessage(aclMessageDiv, `Error loading users: ${result.message || 'Unknown error.'}`, 'error');
+                }
+            } catch (error) {
+                showMessage(aclMessageDiv, `Network Error: Could not connect to backend to fetch users. Is the Flask app running?`, 'error');
+                console.error('Fetch users error:', error);
+            }
+        }
+        
+        // Main function to execute the ACL action
+        async function handleAclAction() {
+            const operation = document.getElementById('operation').value;
+            const objectKey = document.getElementById('objectKey').value.trim();
+            const recipientUsername = recipientSelect.value; 
+            const ownerId = document.getElementById('ownerId').value.trim();
+            
+            aclMessageDiv.style.display = 'none';
+
+            // Client-side validation
+            if (!operation || !objectKey || !recipientUsername || !ownerId) {
+                showMessage(aclMessageDiv, "All fields (including selecting a recipient) are required.", 'error');
+                return;
+            }
+            if (ownerId.length !== 64) {
+                showMessage(aclMessageDiv, "The Owner Canonical ID must be 64 characters long.", 'error');
+                return;
+            }
+
+            // Determine the action (GRANT or REVOKE) and the permission
+            const action = operation.split('_')[0]; 
+            const permission = operation.split('_')[1]; 
+
+            const data = {
+                action: action,
+                permission: permission,
+                object_key: objectKey,
+                recipient_username: recipientUsername, // Sending the username for DB lookup
+                owner_canonical_id: ownerId
+            };
+            
+            document.getElementById('aclActionButton').textContent = 'Executing...';
+            document.getElementById('aclActionButton').disabled = true;
+
+            try {
+                const response = await fetch(`${backendBaseUrl}/acl-action`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+
+                if (response.ok && result.success) {
+                    showMessage(aclMessageDiv, result.message, 'success');
+                } else {
+                    showMessage(aclMessageDiv, `Error: ${result.message || 'Failed to update ACL.'}`, 'error');
+                }
+            } catch (error) {
+                showMessage(aclMessageDiv, `Network Error: Could not connect to the backend server.`, 'error');
+                console.error('Fetch error:', error);
+            } finally {
+                document.getElementById('aclActionButton').textContent = 'Execute ACL Action';
+                document.getElementById('aclActionButton').disabled = false;
+            }
+        }
+        
+        // Initialize the user list on page load
+        document.addEventListener('DOMContentLoaded', fetchUsers);
+    </script>
+</body>
+</html>

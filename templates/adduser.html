@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>S3 User Management 👥</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+
+    <style>
+        /* Define the color scheme using CSS variables */
+        :root {
+            --bg-color: #1a1a1a;
+            --text-color: #e0e0e0;
+            --heading-color: #8a2be2; /* Blue-Violet for heading */
+            --input-bg: #2b2b2b;
+            --button-bg: #007bff; /* Blue for primary button */
+            --button-hover-bg: #0056b3;
+            --neon-shadow-color: #0ff; /* Cyan neon glow */
+            --success-bg: #32a852;
+            --success-border: #2e8b46;
+            --error-bg: #a83232;
+            --error-border: #8b2e2e;
+        }
+
+        body { 
+            font-family: 'Share Tech Mono', monospace; 
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            flex-direction: column;
+            /* Same subtle background effect */
+            background-image: radial-gradient(circle at center, rgba(0,255,255,0.05) 0%, transparent 70%);
+        }
+
+        .main-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 40px; /* Space between the form and the viewer */
+            width: 100%;
+        }
+
+        .container { 
+            background-color: #222; 
+            border: 1px solid #444;
+            border-radius: 12px;
+            padding: 30px;
+            /* Neon glow effect from your ACL theme */
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.2); 
+            max-width: 500px; 
+            width: 90%;
+            animation: fadeIn 1s ease-out;
+        }
+        
+        /* New styles for the User Viewer Table */
+        .user-viewer-container {
+            width: 90%;
+            max-width: 800px; /* Wider table area for the Canonical ID */
+            background-color: #222; 
+            border: 1px solid #444;
+            border-radius: 12px;
+            padding: 30px;
+            /* Use heading color glow */
+            box-shadow: 0 0 20px rgba(138, 43, 226, 0.2); 
+            animation: fadeIn 1s ease-out;
+        }
+
+        .user-viewer-container h3 {
+            font-family: 'Orbitron', sans-serif;
+            color: var(--neon-shadow-color);
+            text-align: center;
+            margin-bottom: 20px;
+            text-shadow: 0 0 8px var(--neon-shadow-color);
+            font-size: 1.5rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #3a3a3a;
+            font-size: 0.9em;
+            word-break: break-word; /* Ensure Canonical IDs wrap */
+        }
+
+        th {
+            background-color: #333;
+            color: var(--heading-color);
+            font-family: 'Orbitron', sans-serif;
+            text-transform: uppercase;
+        }
+
+        tr:nth-child(even) { background-color: #282828; }
+        tr:nth-child(odd) { background-color: #222; }
+
+        tr:hover {
+            background-color: #383838;
+            box-shadow: inset 3px 0 0 var(--neon-shadow-color);
+            transition: background-color 0.2s, box-shadow 0.2s;
+        }
+
+        /* Existing styles below... */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        h2 { 
+            font-family: 'Orbitron', sans-serif; 
+            color: var(--heading-color);
+            text-align: center;
+            margin-bottom: 30px;
+            text-shadow: 0 0 10px var(--heading-color), 0 0 20px var(--heading-color);
+            animation: pulsateColor 5s infinite alternate; 
+            font-size: 1.75rem;
+        }
+        
+        @keyframes pulsateColor {
+            0% { text-shadow: 0 0 10px var(--heading-color), 0 0 20px var(--heading-color); }
+            50% { text-shadow: 0 0 15px var(--heading-color), 0 0 25px var(--heading-color), 0 0 30px rgba(138, 43, 226, 0.5); }
+            100% { text-shadow: 0 0 10px var(--heading-color), 0 0 20px var(--heading-color); }
+        }
+
+        label { 
+            display: block; 
+            margin-bottom: 8px; 
+            color: var(--text-color); 
+            font-weight: 500;
+            font-size: 1.1em;
+        }
+
+        input[type="text"] { 
+            width: calc(100% - 20px); 
+            padding: 10px; 
+            margin-bottom: 20px; 
+            background-color: var(--input-bg);
+            border: 1px solid #555;
+            border-radius: 6px;
+            color: var(--text-color);
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 1em;
+            box-shadow: 0 0 0px var(--neon-shadow-color);
+            transition: box-shadow 0.3s ease-in-out;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: var(--neon-shadow-color);
+            box-shadow: 0 0 8px var(--neon-shadow-color), 0 0 15px rgba(0, 255, 255, 0.4); 
+        }
+
+        button { 
+            background-color: var(--button-bg); 
+            color: white; 
+            padding: 15px; 
+            border: none; 
+            border-radius: 6px; 
+            cursor: pointer; 
+            font-size: 1.1em;
+            width: 100%; 
+            font-family: 'Orbitron', sans-serif;
+            letter-spacing: 1px;
+            transition: background-color 0.3s ease, box-shadow 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 123, 255, 0.4);
+        }
+
+        button:hover { 
+            background-color: var(--button-hover-bg); 
+            box-shadow: 0 6px 20px rgba(0, 123, 255, 0.6);
+        }
+
+        #message { 
+            margin-top: 25px;
+            padding: 15px; 
+            border-radius: 6px; 
+            display: none;
+            font-weight: bold;
+            text-align: center;
+            font-size: 1em;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
+        }
+
+        .success { 
+            background-color: var(--success-bg);
+            color: white; 
+            border: 1px solid var(--success-border);
+            text-shadow: 0 0 5px rgba(255,255,255,0.5);
+        }
+        .error { 
+            background-color: var(--error-bg);
+            color: white; 
+            border: 1px solid var(--error-border);
+            text-shadow: 0 0 5px rgba(255,255,255,0.5);
+        }
+    </style>
+</head>
+<body>
+    <div class="main-content">
+        <!-- User Addition Form -->
+        <div class="container">
+            <h2>👥 S3 User Setup <span style="color: var(--neon-shadow-color);">🛠️</span></h2>
+            <p class="note" style="color:#aaa; font-style:italic; font-size:0.9em; margin-top:-15px;">Add team member's username and their Canonical ID to the RDS database.</p>
+            
+            <form id="addUserForm">
+                <label for="username">Username (Used for ACL lookup):</label>
+                <input type="text" id="username" name="username" required placeholder="e.g., alice_tester">
+
+                <label for="canonicalId">AWS Canonical ID (64-character Recipient ID):</label>
+                <input type="text" id="canonicalId" name="canonicalId" required placeholder="e.g., 79a59d...47ef2be" maxlength="64">
+
+                <button type="submit">Add User to Database</button>
+            </form>
+            <div id="message" role="alert"></div>
+        </div>
+
+        <!-- Registered User Viewer Table -->
+        <div class="user-viewer-container">
+            <h3>Registered Team Members <span id="user-count-display">(...)</span></h3>
+            <div id="user-list-message" style="color: #ffcc00; text-align: center; margin-bottom: 15px;">Loading users...</div>
+            
+            <table id="user-table" style="display:none;">
+                <thead>
+                    <tr>
+                        <th>Username</th>
+                        <th>Canonical ID</th>
+                    </tr>
+                </thead>
+                <tbody id="user-table-body">
+                    <!-- Data will be inserted here by JavaScript -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const ADD_USER_API = 'http://127.0.0.1:5000/add-user';
+        const VIEW_USERS_API = 'http://127.0.0.1:5000/view-users';
+        
+        const messageDiv = document.getElementById('message');
+        const userTableBody = document.getElementById('user-table-body');
+        const userTable = document.getElementById('user-table');
+        const userListMessage = document.getElementById('user-list-message');
+        const userCountDisplay = document.getElementById('user-count-display');
+
+        /**
+         * Shows a status message (success/error) in the form area.
+         */
+        function showMessage(text, type) {
+            messageDiv.innerHTML = text; 
+            messageDiv.className = type;
+            messageDiv.style.display = 'block';
+        }
+
+        /**
+         * Fetches all registered users from the Flask API and updates the table.
+         */
+        async function fetchAndDisplayUsers() {
+            userListMessage.textContent = 'Loading users...';
+            userListMessage.style.color = '#ffcc00';
+            userListMessage.style.display = 'block';
+            userTable.style.display = 'none';
+            userTableBody.innerHTML = '';
+            userCountDisplay.textContent = '(...)';
+
+            try {
+                const response = await fetch(VIEW_USERS_API);
+                const result = await response.json();
+
+                if (response.ok && result.success) {
+                    const users = result.users || [];
+                    userCountDisplay.textContent = `(${users.length})`;
+                    userListMessage.style.display = 'none';
+
+                    if (users.length === 0) {
+                        userListMessage.textContent = 'No S3 users are registered in the database yet.';
+                        userListMessage.style.display = 'block';
+                    } else {
+                        userTable.style.display = 'table';
+                        
+                        users.forEach(user => {
+                            const row = userTableBody.insertRow();
+                            row.insertCell().textContent = user.username;
+                            row.insertCell().textContent = user.canonical_id; 
+                        });
+                    }
+                } else {
+                    userListMessage.textContent = `API Error: ${result.message || 'Could not retrieve user list.'}`;
+                    userListMessage.style.color = 'var(--error-bg)';
+                    userListMessage.style.display = 'block';
+                }
+
+            } catch (error) {
+                userListMessage.textContent = 'Network Error: Cannot connect to the Flask server. Please ensure s3_acl_manager.py is running.';
+                userListMessage.style.color = 'var(--error-bg)';
+                userListMessage.style.display = 'block';
+                console.error('Fetch error for user list:', error);
+            }
+        }
+        
+        /**
+         * Handles the form submission to add a new user.
+         */
+        function handleAddUserSubmit(event) {
+            event.preventDefault();
+            const username = document.getElementById('username').value.trim();
+            const canonicalId = document.getElementById('canonicalId').value.trim();
+            
+            if (!username || !canonicalId) {
+                showMessage('Please fill in both Username and Canonical ID.', 'error');
+                return;
+            }
+
+            if (canonicalId.length !== 64) {
+                showMessage('Canonical ID must be exactly 64 characters long.', 'error');
+                return;
+            }
+
+            const payload = {
+                username: username,
+                canonical_id: canonicalId
+            };
+
+            showMessage('Processing...', 'error');
+
+            fetch(ADD_USER_API, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            })
+            .then(response => response.json().then(data => ({
+                status: response.status, 
+                body: data
+            })))
+            .then(({ status, body }) => {
+                if (status === 200) {
+                    showMessage(body.message, 'success');
+                    document.getElementById('addUserForm').reset();
+                    // Refresh the user table after successful addition
+                    fetchAndDisplayUsers(); 
+                } else {
+                    showMessage(`Error (${status}): ${body.message}`, 'error');
+                }
+            })
+            .catch(error => {
+                showMessage(`Network Error: Could not connect to the API. Ensure Flask is running.`, 'error');
+                console.error('Fetch error:', error);
+            });
+        };
+        
+        // Setup listeners on page load
+        document.addEventListener('DOMContentLoaded', () => {
+             // 1. Initial load of users for the table
+             fetchAndDisplayUsers();
+             // 2. Attach form listener
+             document.getElementById('addUserForm').addEventListener('submit', handleAddUserSubmit);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,4 @@
+flask
+psycopg2-binary # Use the binary version for easier deployment
+boto3
+flask-cors
