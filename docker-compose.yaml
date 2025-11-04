@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  # This defines your single microservice container
+  web_app_service:
+    # Tells Compose to build the image using the Dockerfile in the current directory
+    build: . 
+    
+    # Maps the host port 5000 to the container port 8000
+    ports:
+      - "5000:8000"
+      
+    # Optionally restart the container if it fails (good for production)
+    restart: always
+    
+    # Mounts the current directory into the container's working directory. 
+    volumes:
+      - .:/code
+      
+    # Define environment variables (CRITICAL: AWS Credentials added here)
+    environment:
+      # Example: Use the 'web_app_service' as the host for internal connections
+      SERVICE_HOST: 0.0.0.0 
+      
+      # --- AWS CREDENTIALS (MUST BE UPDATED WITH YOUR REAL KEYS) ---
+      # Boto3 automatically uses these environment variables for authentication
+      AWS_ACCESS_KEY_ID: 'AKIAQLE5H6XE3DXGKEQM'
+      AWS_SECRET_ACCESS_KEY: 'nyen4/IvjISLfM4ivYLPzBZToEj1I+c5xQtu3j1b'
+      # Specify your AWS Region if your application needs it
+      # AWS_REGION: ap-south-1 
+      
+      # The S3 bucket name is defined in app.py, but could be managed here
+      BUCKET_NAME: mpversion
